@@ -1,0 +1,33 @@
+[project]
+name = "ag-news-classification"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "accelerate>=0.26.0",
+    "datasets>=4.1.1",
+    "evaluate>=0.4.6",
+    "jupyter>=1.1.1",
+    "matplotlib>=3.10.6",
+    "networkx>=3.5",
+    "nltk>=3.9.2",
+    "notebook>=7.4.7",
+    "numpy>=2.3.3",
+    "pandas>=2.3.3",
+    "plotly>=6.3.1",
+    "scikit-learn>=1.7.2",
+    "seaborn>=0.13.2",
+    "textstat>=0.7.10",
+    "torch>=2.8.0",
+    "torchaudio>=2.8.0",
+    "torchmetrics>=1.8.2",
+    "torchvision>=0.23.0",
+    "tqdm>=4.67.1",
+    "transformers[torch]>=4.57.0",
+    "wandb>=0.22.1",
+    "wordcloud>=1.9.4",
+]
+
+[dependency-groups]
+dev = []

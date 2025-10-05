@@ -1,0 +1,78 @@
+Starting TextCNN training for AG News classification (mode: fast)
+Using device: mps
+System has 16 CPU cores, using 4 workers
+Vocab size: 50000
+Fast mode: 8 trials, 6 epochs (recommended)
+
+================================================================================
+Trial 1/8 | config: {'weight_decay': 0.0001, 'patience': 2, 'optimizer': 'adamw', 'max_len': 200, 'lr': 0.001, 'kernel_sizes': (3, 4, 5), 'grad_clip': 1.0, 'epochs': 6, 'emb_dim': 200, 'dropout': 0.5, 'channels': 192, 'batch_size': 128}
+[trial 00] ep 02/6 | train 0.3500/0.8799 | val 0.2957/0.9027
+[trial 00] ep 04/6 | train 0.1886/0.9366 | val 0.3038/0.9052
+[trial 00] ep 06/6 | train 0.1058/0.9646 | val 0.4014/0.9061
+
+================================================================================
+Trial 2/8 | config: {'weight_decay': 0.0001, 'patience': 2, 'optimizer': 'adamw', 'max_len': 200, 'lr': 0.002, 'kernel_sizes': (3, 4, 5), 'grad_clip': 1.0, 'epochs': 6, 'emb_dim': 200, 'dropout': 0.5, 'channels': 128, 'batch_size': 128}
+[trial 01] ep 02/6 | train 0.3154/0.8956 | val 0.2911/0.9066
+[trial 01] ep 04/6 | train 0.1674/0.9468 | val 0.3601/0.9064
+[trial 01] early stopping at epoch 4
+
+================================================================================
+Trial 3/8 | config: {'weight_decay': 0.0, 'patience': 2, 'optimizer': 'adamw', 'max_len': 200, 'lr': 0.001, 'kernel_sizes': (3, 4, 5), 'grad_clip': 1.0, 'epochs': 6, 'emb_dim': 100, 'dropout': 0.5, 'channels': 192, 'batch_size': 128}
+[trial 02] ep 02/6 | train 0.3939/0.8616 | val 0.3154/0.8919
+[trial 02] ep 04/6 | train 0.2242/0.9235 | val 0.2855/0.9061
+[trial 02] ep 06/6 | train 0.1399/0.9522 | val 0.3381/0.9030
+
+================================================================================
+Trial 4/8 | config: {'weight_decay': 0.0001, 'patience': 2, 'optimizer': 'adamw', 'max_len': 200, 'lr': 0.001, 'kernel_sizes': (3, 4, 5), 'grad_clip': 1.0, 'epochs': 6, 'emb_dim': 100, 'dropout': 0.3, 'channels': 192, 'batch_size': 128}
+[trial 03] ep 02/6 | train 0.3562/0.8750 | val 0.3212/0.8933
+[trial 03] ep 04/6 | train 0.1967/0.9320 | val 0.3049/0.9009
+[trial 03] early stopping at epoch 5
+
+================================================================================
+Trial 5/8 | config: {'weight_decay': 0.0, 'patience': 2, 'optimizer': 'adamw', 'max_len': 200, 'lr': 0.001, 'kernel_sizes': (3, 4, 5), 'grad_clip': 1.0, 'epochs': 6, 'emb_dim': 100, 'dropout': 0.5, 'channels': 128, 'batch_size': 128}
+[trial 04] ep 02/6 | train 0.3970/0.8611 | val 0.3191/0.8925
+[trial 04] ep 04/6 | train 0.2287/0.9221 | val 0.2894/0.9054
+[trial 04] ep 06/6 | train 0.1432/0.9520 | val 0.3269/0.9030
+
+================================================================================
+Trial 6/8 | config: {'weight_decay': 0.0001, 'patience': 2, 'optimizer': 'adamw', 'max_len': 200, 'lr': 0.001, 'kernel_sizes': (3, 4, 5), 'grad_clip': 1.0, 'epochs': 6, 'emb_dim': 100, 'dropout': 0.5, 'channels': 128, 'batch_size': 128}
+[trial 05] ep 02/6 | train 0.3950/0.8623 | val 0.3219/0.8926
+[trial 05] ep 04/6 | train 0.2316/0.9216 | val 0.2995/0.9005
+[trial 05] ep 06/6 | train 0.1474/0.9500 | val 0.3250/0.9057
+
+================================================================================
+Trial 7/8 | config: {'weight_decay': 0.0, 'patience': 2, 'optimizer': 'adamw', 'max_len': 200, 'lr': 0.002, 'kernel_sizes': (3, 4, 5), 'grad_clip': 1.0, 'epochs': 6, 'emb_dim': 200, 'dropout': 0.5, 'channels': 192, 'batch_size': 128}
+[trial 06] ep 02/6 | train 0.3311/0.8907 | val 0.3039/0.9000
+[trial 06] ep 04/6 | train 0.1832/0.9447 | val 0.4250/0.9001
+[trial 06] early stopping at epoch 5
+
+================================================================================
+Trial 8/8 | config: {'weight_decay': 0.0001, 'patience': 2, 'optimizer': 'adamw', 'max_len': 200, 'lr': 0.001, 'kernel_sizes': (3, 4, 5), 'grad_clip': 1.0, 'epochs': 6, 'emb_dim': 100, 'dropout': 0.5, 'channels': 192, 'batch_size': 128}
+[trial 07] ep 02/6 | train 0.3926/0.8621 | val 0.3176/0.8900
+[trial 07] ep 04/6 | train 0.2276/0.9220 | val 0.2909/0.9061
+[trial 07] ep 06/6 | train 0.1399/0.9525 | val 0.3308/0.9035
+
+================================================================================
+RESULTS SUMMARY:
+   trial status   val_acc  best_epoch  ...  cfg_emb_dim  cfg_dropout cfg_channels  cfg_batch_size
+5      5     ok  0.907917           5  ...          100          0.5          128             128
+0      0     ok  0.907792           5  ...          200          0.5          192             128
+7      7     ok  0.907375           5  ...          100          0.5          192             128
+2      2     ok  0.907292           5  ...          100          0.5          192             128
+6      6     ok  0.906750           3  ...          200          0.5          192             128
+1      1     ok  0.906625           2  ...          200          0.5          128             128
+4      4     ok  0.905917           5  ...          100          0.5          128             128
+3      3     ok  0.905208           3  ...          100          0.3          192             128
+
+[8 rows x 16 columns]
+
+Training completed successfully!
+Best trial: 5
+Best validation accuracy: 0.9079
+Best epoch: 5
+Best model saved as: outputs/textcnn/models/best_model.pt
+Results saved in: outputs/textcnn/
+
+Evaluating best model on test set...
+Test accuracy: 0.9009
+Test loss: 0.3146

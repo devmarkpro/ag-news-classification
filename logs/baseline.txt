@@ -1,0 +1,68 @@
+Starting Baseline Logistic Regression training for AG News classification
+Loading data...
+Training data shape: (120000, 2)
+Test data shape: (7600, 2)
+Training samples: 96000
+Validation samples: 24000
+Creating TF-IDF features with 200000 max features...
+TF-IDF vocabulary size: 200000
+Training features shape: (96000, 200000)
+Validation features shape: (24000, 200000)
+Test features shape: (7600, 200000)
+Training Logistic Regression classifier...
+System has 16 CPU cores, using 8 workers for sklearn
+Training completed!
+Evaluating model on Validation set...
+Validation Accuracy: 0.9188
+
+Validation Classification Report:
+              precision    recall  f1-score   support
+
+           0     0.9270    0.9037    0.9152      6000
+           1     0.9502    0.9803    0.9651      6000
+           2     0.8981    0.8887    0.8934      6000
+           3     0.8989    0.9025    0.9007      6000
+
+    accuracy                         0.9188     24000
+   macro avg     0.9186    0.9188    0.9186     24000
+weighted avg     0.9186    0.9188    0.9186     24000
+
+Validation ROC AUC: 0.9853
+Evaluating model on Test set...
+Test Accuracy: 0.9153
+
+Test Classification Report:
+              precision    recall  f1-score   support
+
+           0     0.9306    0.9032    0.9167      1900
+           1     0.9491    0.9811    0.9648      1900
+           2     0.8887    0.8784    0.8835      1900
+           3     0.8918    0.8984    0.8951      1900
+
+    accuracy                         0.9153      7600
+   macro avg     0.9151    0.9153    0.9150      7600
+weighted avg     0.9151    0.9153    0.9150      7600
+
+Test ROC AUC: 0.9832
+
+Generating evaluation plots...
+Generating confusion matrix...
+Confusion matrix saved to outputs/baseline_lr/plots/confusion_matrix_val.png
+Generating confusion matrix...
+Confusion matrix saved to outputs/baseline_lr/plots/confusion_matrix_test.png
+Generating ROC curves...
+ROC curves saved to outputs/baseline_lr/plots/roc_curves_val.png
+Generating ROC curves...
+ROC curves saved to outputs/baseline_lr/plots/roc_curves_test.png
+Saving model and vectorizer...
+Model saved to: outputs/baseline_lr/models/model.joblib
+Vectorizer saved to: outputs/baseline_lr/models/vectorizer.joblib
+
+Baseline training completed successfully!
+Validation accuracy: 0.9188
+Test accuracy: 0.9153
+Validation ROC AUC: 0.9853
+Test ROC AUC: 0.9832
+Model saved as: outputs/baseline_lr/models/model.joblib
+Vectorizer saved as: outputs/baseline_lr/models/vectorizer.joblib
+Plots saved in: outputs/baseline_lr/plots/
