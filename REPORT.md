@@ -68,7 +68,7 @@ The train-test split visualization (bottom-left) confirms that the balanced dist
 
 #### Figure 2: Word Clouds Analysis
 
-![Word Clouds](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/eda/word_clouds_professional.png)
+![Word Clouds](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/eda/word_clouds.png)
 
 The word cloud visualizations provide intuitive representations of vocabulary differences across news categories. Each quadrant represents a distinct category, with word size proportional to frequency within that category.
 

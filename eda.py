@@ -352,9 +352,7 @@ class AGNewsEDA:
             "Word Clouds by News Category", fontsize=20, fontweight="bold", y=0.95
         )
         plt.tight_layout()
-        plt.savefig(
-            "outputs/eda/word_clouds_professional.png", dpi=300, bbox_inches="tight"
-        )
+        plt.savefig("outputs/eda/word_clouds.png", dpi=300, bbox_inches="tight")
         plt.show()
 
     def analyze_top_words(self):
