@@ -494,30 +494,48 @@ The final scores really challenged what I thought would happen:
 4. **Lighter Transformers**: Look for ways to make models like DistilBERT even faster while keeping their accuracy.
 
 This project taught me that doing good experiments is just as important as having fancy algorithms. Using tools like Optuna and proper evaluation methods helped me understand what really works and what just looks good on paper.
-
 ## Conclusion
 
-This comparative study of three machine learning approaches for AG News classification revealed several important insights about text classification performance and methodology.
+This comparative study of three machine learning approaches for AG News Classification revealed several important insights about text classification performance and methodology.
 
-The experimental results showed that **DistilBERT achieved the highest accuracy at 94.70%**, demonstrating the power of pre-trained transformer models for text understanding. However, the study also revealed that **traditional Logistic Regression performed surprisingly well at 91.53%**, actually outperforming the optimized TextCNN model (84.43% test accuracy) despite being much simpler.
+  The experimental results showed that **DistilBERT achieved the highest accuracy at 94.70%**, demonstrating the power of pre-trained transformer models for text understanding. However, the study also revealed that **traditional Logistic Regression performed surprisingly well at 91.53%**, actually outperforming the optimized TextCNN model (84.43% test accuracy) despite being much simpler.
 
-The most significant finding was the **generalization gap observed in the TextCNN approach**. While Optuna optimization achieved 92.31% validation accuracy, the test performance dropped to 84.43%, highlighting the critical importance of robust validation strategies in hyperparameter optimization. This 7.87% gap serves as a valuable lesson about the risks of overfitting to validation data, even when using sophisticated optimization techniques.
+  The most significant finding was the **generalization gap observed in the TextCNN approach**. While Optuna optimization achieved 92.31% validation accuracy, the test performance dropped to 84.43%, highlighting the critical importance of robust validation strategies in hyperparameter optimization. This 7.87% gap serves as a valuable lesson about the risks of overfitting to validation data, even when using sophisticated optimization techniques.
 
-**Key contributions of this research include:**
+  **Key contributions of this research include:**
+ 1. **Empirical comparison** of three distinct approaches on a balanced news classification dataset
+ 2. **Demonstration of Optuna's effectiveness** in automated hyperparameter optimization, achieving 60% computational savings through intelligent pruning
+ 3. **Evidence that traditional methods remain competitive** - Logistic Regression's strong performance challenges assumptions about deep learning superiority in all scenarios
+ 4. **Identification of generalization challenges** in neural network optimization for text classification
 
-1. **Empirical comparison** of three distinct approaches on a balanced news classification dataset
-2. **Demonstration of Optuna's effectiveness** in automated hyperparameter optimization, achieving 60% computational savings through intelligent pruning
-3. **Evidence that traditional methods remain competitive** - Logistic Regression's strong performance challenges assumptions about deep learning superiority in all scenarios
-4. **Identification of generalization challenges** in neural network optimization for text classification
+  The study confirms that **model selection should consider not only accuracy but also reliability, interpretability, and computational requirements**. For practical applications requiring fast, interpretable results, Logistic Regression remains highly viable. For maximum accuracy where computational resources are available, DistilBERT provides superior performance with robust generalization.
 
-The study confirms that **model selection should consider not only accuracy but also reliability, interpretability, and computational requirements**. For practical applications requiring fast, interpretable results, Logistic Regression remains highly viable. For maximum accuracy where computational resources are available, DistilBERT provides superior performance with robust generalization.
-
-This research contributes to the understanding of text classification methodologies and provides a framework for future comparative studies in natural language processing applications.
+  This research contributes to the understanding of text classification methodologies and provides a framework for future comparing studies in natural language processing applications.
 
 ## References
 
-1. [AG News Classification Dataset](https://www.kaggle.com/datasets/amananandrai/ag-news-classification-dataset)
-2. [DistilBERT](https://huggingface.co/distilbert-base-uncased)
-3. [Word Embeddings: Encoding Lexical Semantics](https://docs.pytorch.org/tutorials/beginner/nlp/word_embeddings_tutorial.html)
-4. [Sentence Embeddings with PyTorch Lightning](https://blog.paperspace.com/sentence-embeddings-pytorch-lightning/)
-5. [DistilBert in pytorch](https://www.kaggle.com/code/samson22/distilbert-in-pytorch)
+[1] Zhang, X., Zhao, J., & LeCun, Y. (2015). Character-level Convolutional Networks for Text Classification. NeurIPS. https://arxiv.org/abs/1509.01626
+
+[2] AG News Classification Dataset (Kaggle mirror). https://www.kaggle.com/datasets/amananandrai/ag-news-classification-dataset
+
+[3] Kim, Y. (2014). Convolutional Neural Networks for Sentence Classification. EMNLP. https://arxiv.org/abs/1408.5882
+
+[4] Sanh, V., Debut, L., Chaumond, J., & Wolf, T. (2019). DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter. https://arxiv.org/abs/1910.01108
+
+[5] Wolf, T., Debut, L., Sanh, V., et al. (2020). Transformers: State-of-the-Art Natural Language Processing. EMNLP: System Demonstrations. https://arxiv.org/abs/1910.03771
+
+[6] Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019). Optuna: A Next-generation Hyperparameter Optimization Framework. KDD. https://doi.org/10.1145/3292500.3330701
+
+[7] Blei, D. M., Ng, A. Y., & Jordan, M. I. (2003). Latent Dirichlet Allocation. JMLR, 3, 993–1022. https://jmlr.org/papers/v3/blei03a.html
+
+[8] Pedregosa, F., Varoquaux, G., Gramfort, A., et al. (2011). Scikit-learn: Machine Learning in Python. JMLR, 12, 2825–2830. https://jmlr.org/papers/v12/pedregosa11a.html
+
+[9] Paszke, A., Gross, S., Massa, F., et al. (2019). PyTorch: An Imperative Style, High-Performance Deep Learning Library. NeurIPS. https://papers.neurips.cc/paper/2019/hash/bdbca288fee7f92f2bfa9f7012727740-Abstract.html
+
+[10] DistilBERT base uncased model card. https://huggingface.co/distilbert-base-uncased
+
+[11] PyTorch Tutorial: Word Embeddings – Encoding Lexical Semantics. https://docs.pytorch.org/tutorials/beginner/nlp/word_embeddings_tutorial.html
+
+[12] Optuna Tutorial. https://optuna.readthedocs.io/en/stable/tutorial/index.html
+
+[13] PyTorch Tutorial: NLP From Scratch: Classifying Names with a Character-Level RNN. https://docs.pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html
