@@ -18,24 +18,6 @@ The AG News dataset contains news articles from 4 categories:
 - Business
 - Science/Technology
 
-## Project Structure
-
-```
-ag-news-classification/
-├── data/                    # Dataset files
-│   ├── train.csv
-│   └── test.csv
-├── outputs/                 # Model outputs and plots
-│   ├── baseline_lr/
-│   ├── textcnn/
-│   ├── distilbert/
-│   └── eda/
-├── baseline_lr.py          # Logistic Regression baseline
-├── text_cnn.py            # TextCNN implementation
-├── distilbert_trainer.py  # DistilBERT fine-tuning
-├── eda_academic.py        # Exploratory Data Analysis
-```
-
 ## Installation & Setup
 
 ### Option 1: Using uv (Recommended)
@@ -92,7 +74,7 @@ pip install -e .
 Generate comprehensive visualizations and statistics:
 
 ```bash
-python eda_academic.py
+python eda.py
 ```
 
 This creates visualizations in `outputs/eda/`:
