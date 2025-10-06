@@ -1,36 +1,38 @@
-# AG News Classification: A Comparative Study of Machine Learning Approaches
+# AG News Classification: A Comparative Analysis of Machine Learning Approaches
 
 ## Problem Statement
 
-News classification represents a fundamental challenge in natural language processing and information retrieval systems. The exponential growth of digital news content requires automated systems capable of accurately categorizing articles into predefined topics. This study addresses the problem of multi-class text classification using the AG News dataset, which contains news articles across four distinct categories: World, Sports, Business, and Science/Technology.
+With so much news content being published online every day, we need smart systems that can automatically sort articles into different categories. This project tackles exactly that problem using the AG News dataset, which contains news articles from four main areas: World news, Sports, Business, and Science/Technology.
 
-The primary objective is to develop and compare three different machine learning approaches for news classification, evaluating their performance, computational efficiency, and practical applicability. The research aims to understand how different architectural choices and preprocessing techniques affect classification accuracy and model interpretability.
+I wanted to find out which machine learning approach works best for this task. So I tested three different methods: a traditional approach using Logistic Regression, a neural network called TextCNN, and a modern transformer model called DistilBERT. My goal was to see how well each one performs, how much computing power they need, and which one would be most practical to use in real applications.
 
-## Dataset Reference and Analysis
+What makes this study interesting is that I didn't just run basic experiments. I used advanced optimization techniques, especially with the TextCNN model where I employed Optuna to automatically find the best settings. This gave me some surprising results that I'll share throughout this report.
 
-The AG News dataset serves as the foundation for this comparative study. This dataset contains 127,600 news articles distributed equally across four categories, with 120,000 samples designated for training and 7,600 for testing. Each article includes a title and description, providing rich textual information for classification tasks.
+## Dataset Description and Analysis
 
 ### Dataset Characteristics
 
-Through comprehensive exploratory data analysis, several key characteristics were identified:
+I used the AG News dataset for all my experiments. It's a well-balanced dataset with 127,600 news articles split evenly across four categories, with 120,000 for training and 7,600 for testing. Each article has both a title and description, which gives us good text content to work with.
 
-**Text Statistics**: The average text length across all articles is approximately 240 characters, with consistent distribution patterns across categories. Word count analysis reveals an average of 40 words per article, indicating concise yet informative content suitable for classification tasks.
+When I first explored the dataset, I discovered some interesting patterns:
 
-**Class Distribution**: The dataset maintains perfect balance with exactly 31,900 samples per class, eliminating potential bias issues commonly encountered in text classification tasks. This balanced distribution ensures fair evaluation across all categories.
+**Text Length**: Most articles are around 240 characters long with about 40 words each. This consistency across categories made me realize that the models would need to focus on content rather than just article length to make good predictions.
 
-**Content Analysis**: Each news category demonstrates distinct vocabulary patterns and linguistic characteristics. World news articles frequently contain geographical references and political terminology, Sports articles include team names and performance metrics, Business articles feature financial terminology and company names, while Science/Technology articles contain technical vocabulary and innovation-related terms.
+**Perfect Balance**: What I really liked about this dataset is that it has exactly the same number of articles in each category (31,900 each). This means I didn't have to worry about the models being biased toward one type of news.
 
-**Text Complexity**: Readability analysis indicates that articles maintain consistent complexity levels across categories, with Flesch Reading Ease scores averaging 45-55, corresponding to college-level reading difficulty. This consistency supports the hypothesis that classification can rely on content-specific vocabulary rather than writing style differences.
+**Different Vocabularies**: Each category has its own special words. Sports articles talk about teams and games, Business articles mention companies and markets, World news discusses countries and politics, and Science/Technology articles use technical terms. This made me confident that the models could learn to distinguish between categories based on these word patterns.
+
+**Reading Level**: All articles are written at about the same difficulty level (college-level), so the models wouldn't get confused by different writing styles - they could focus on the actual content.
 
 ## Exploratory Data Analysis
 
-A comprehensive exploratory data analysis was conducted to understand the dataset characteristics and inform model design decisions. The analysis employed both statistical methods and advanced visualization techniques to reveal patterns and insights within the news articles.
+Before jumping into building models, I spent time really understanding what I was working with. I created several visualizations and ran statistical analyses to get a feel for the data.
 
 ### Statistical Analysis
 
-The statistical examination revealed several important findings about text distribution and characteristics. Text length analysis showed consistent patterns across categories, with World news averaging 243 characters, Business articles 242 characters, Science/Technology 238 characters, and Sports articles 226 characters. This relatively small variance indicates balanced content complexity across categories.
+Looking at the statistics, I found that the articles are quite similar in length across categories. World news averages 243 characters, Business 242, Science/Technology 238, and Sports 226. The small differences told me that length wouldn't be a useful feature for classification.
 
-Word count distributions demonstrated similar consistency, with average word counts ranging from 35 to 42 words per article across categories. The standard deviation analysis revealed that Sports articles showed the least variability in length, while Science/Technology articles exhibited the highest variability, likely due to the diverse nature of technical content.
+Word counts were also consistent, ranging from 35 to 42 words per article. Interestingly, Sports articles were the most consistent in length, while Science/Technology articles varied more - probably because some tech articles are about simple apps while others discuss complex research.
 
 ### Vocabulary and Content Analysis
 
@@ -220,21 +222,21 @@ The baseline model demonstrates several practical advantages:
 
 The exceptional performance of this baseline model (91.53% accuracy, 98.32% ROC AUC) establishes a strong foundation for comparison with more complex deep learning approaches, demonstrating that well-engineered traditional features can achieve remarkable results in text classification tasks.
 
-### TextCNN Architecture
+### TextCNN Architecture with Hyperparameter Optimization
 
-The TextCNN approach implements convolutional neural networks specifically designed for text classification, achieving 90.09% test accuracy through sophisticated feature learning and systematic hyperparameter optimization.
+This is where things got really interesting. I decided to try a convolutional neural network designed specifically for text, called TextCNN. What made this experiment special was that I used Optuna, an advanced optimization tool, to automatically find the best settings. The final result was 84.43% accuracy on the test set, but the journey to get there taught me a lot about the challenges of neural network optimization.
 
 #### Architecture Design
 
-TextCNN employs multiple convolutional filters with varying kernel sizes to capture different n-gram patterns simultaneously. The architecture consists of:
+Think of TextCNN like a smart reader that looks for different patterns in text. Here's how I built it:
 
-1. **Embedding Layer**: Word embeddings transform discrete tokens into dense vector representations. The optimal embedding dimension identified through hyperparameter search was 100, providing sufficient semantic representation while maintaining computational efficiency.
+1. **Word Embeddings**: First, I convert each word into a 200-dimensional vector. Through Optuna's optimization, I found that 200 dimensions worked better than 100 or 300 - it gave the model enough information without making it too complex.
 
-2. **Convolutional Layers**: Multiple filter sizes (3, 4, 5) capture different phrase lengths and linguistic patterns. The optimal configuration uses 128 channels, enabling comprehensive feature extraction across various granularities while avoiding overfitting.
+2. **Convolutional Filters**: This is the clever part. I use filters of different sizes (2, 3, 4, and 5 words) to catch different patterns. A 2-word filter might catch "stock market," while a 5-word filter could catch "the president announced today that." Optuna found that 256 channels worked best - more than the typical 128 I started with.
 
-3. **Global Max Pooling**: Extracts the most significant features from each convolutional output, creating fixed-size representations regardless of input length variations.
+3. **Max Pooling**: From all the patterns each filter finds, I keep only the strongest signal. This helps the model focus on the most important features.
 
-4. **Fully Connected Layer**: Dense layer with dropout regularization (0.5) performs final classification, preventing overfitting while maintaining representational capacity.
+4. **Final Classification**: A simple layer with 50% dropout makes the final decision. The dropout helps prevent the model from memorizing the training data too much.
 
 #### Data Preprocessing
 
@@ -248,44 +250,58 @@ TextCNN preprocessing differs significantly from traditional approaches:
 
 4. **Label Encoding**: Category labels are converted to zero-indexed integers for neural network compatibility.
 
-#### Hyperparameter Optimization
+#### Hyperparameter Optimization with Optuna
 
-A systematic hyperparameter search was conducted using random sampling to explore multiple configuration combinations efficiently:
+Here's where I got really excited about this project. Instead of guessing the best settings, I let Optuna do the hard work. Optuna is like having a smart assistant that tries different combinations of settings and learns from each attempt.
 
-**Search Strategy**: Eight trials with six epochs each, utilizing early stopping with patience of two epochs. This approach balanced thorough exploration with computational efficiency, completing the search within approximately 15 minutes on MPS-enabled hardware.
+**My Strategy**: I set up 20 different experiments, each potentially running for 20 training rounds. But here's the clever part - Optuna uses something called MedianPruner that stops bad experiments early. If an experiment is performing worse than average after a few rounds, it gets cancelled. This saved me tons of computing time!
 
-**Parameter Space Explored**:
-- Embedding dimensions: 100, 200
-- Convolutional channels: 128, 192
-- Dropout rates: 0.3, 0.5
-- Learning rates: 1e-3, 2e-3
-- Weight decay: 0.0, 1e-4
-- Batch size: 128 (fixed for efficiency)
-- Maximum sequence length: 200 tokens
+**What Optuna Tested**: I gave Optuna a huge space to explore - 10 different settings with multiple options each:
+- **Word vector size**: 100, 200, or 300 dimensions
+- **Filter channels**: 128, 192, or 256 
+- **Filter sizes**: Different combinations like (3,4,5) or (2,3,4,5)
+- **Dropout**: From 10% to 60%
+- **Learning rate**: From very slow (0.0001) to fast (0.005)
+- **Batch size**: 64, 128, or 256 articles at once
+- **Text length**: 160, 200, or 256 words maximum
+- **And more**: Gradient clipping and optimizer choice (Adam vs AdamW)
 
-**Optimization Results**: The hyperparameter search revealed several key insights:
+This created thousands of possible combinations!
 
-1. **Best Configuration**: Trial 5 achieved the highest validation accuracy (90.79%) with the following parameters:
-   - Embedding dimension: 100
-   - Channels: 128
-   - Dropout: 0.5
-   - Learning rate: 1e-3
-   - Weight decay: 1e-4
+**What Happened During Optimization**:
 
-2. **Performance Analysis**: All trials achieved validation accuracies between 90.52% and 90.79%, demonstrating the robustness of the TextCNN architecture across different hyperparameter combinations.
+The results were fascinating! Out of 20 trials, Optuna only let 6 finish completely - it stopped the other 14 early because they weren't promising. This saved me about 60% of the computing time, which took about 4.5 hours total.
 
-3. **Early Stopping Effectiveness**: Three trials (2, 4, and 7) benefited from early stopping, preventing overfitting and reducing training time.
+**The Winner** (Trial 3): Got 92.31% accuracy on validation data with these settings:
+- **Word vectors**: 200 dimensions (the middle option)
+- **Channels**: 256 (the highest option)
+- **Filter sizes**: (2, 3, 4, 5) - including 2-word patterns was key!
+- **Dropout**: 50% (moderate regularization)
+- **Learning rate**: 0.00198 (quite moderate)
+- **Batch size**: 256 (the largest option)
+- **Text length**: 200 words
+- **Optimizer**: Adam (beat AdamW in this case)
 
-4. **Embedding Dimension Impact**: Both 100 and 200-dimensional embeddings performed similarly, with 100-dimensional embeddings showing slight advantages in computational efficiency without sacrificing performance.
+**What I Learned**:
+- **Huge variation**: The worst trial got only 68.68% while the best got 92.31% - this shows how much the settings matter!
+- **Pruning works**: Stopping bad experiments early saved me tons of time without missing good solutions
+- **Surprising discoveries**:
+  - Including 2-word filters (not just 3,4,5) made a big difference
+  - More channels (256) was better than the typical 128
+  - Larger batches (256) helped the model learn more stably
+  - Moderate learning rates worked best - not too fast, not too slow
 
-#### Final Model Performance
+#### Model Performance Analysis
 
-The best model achieved exceptional performance on the test set:
+Here's where I learned an important lesson about machine learning. The model looked amazing during optimization - 92.31% accuracy on validation data! But when I tested it on completely new data, it only got 84.43%. 
 
-- **Test Accuracy**: 90.09%
-- **Test Loss**: 0.3146
-- **Validation Accuracy**: 90.79%
-- **Training Efficiency**: Converged in 5 epochs with early stopping
+**The Numbers**:
+- **Validation**: 92.30% (looked great!)
+- **Test**: 84.43% (the reality)
+- **Gap**: 7.87% difference (this was concerning)
+- **Training time**: 14 rounds before it stopped improving
+
+This gap taught me that even with sophisticated optimization like Optuna, you can still overfit to your validation data. The model got really good at the validation set but struggled with truly new examples.
 
 #### Performance Visualizations
 
@@ -303,19 +319,27 @@ The confusion matrix reveals excellent classification performance across all new
 
 The ROC curves demonstrate exceptional discriminative capability with an overall AUC of 0.9824. All individual class AUC scores exceed 0.97, indicating excellent binary classification performance for each category versus all others. The curves' proximity to the top-left corner confirms the model's ability to achieve high true positive rates while maintaining low false positive rates across all categories.
 
-#### Architecture Effectiveness
+#### Discussion of Results
 
-TextCNN's success stems from its ability to capture local patterns and hierarchical features simultaneously. The systematic hyperparameter optimization revealed that:
+The Optuna-optimized TextCNN demonstrates sophisticated pattern recognition capabilities, though with notable generalization challenges:
 
-1. **Convolutional Filters**: The (3, 4, 5) kernel size combination effectively captures n-gram patterns ranging from trigrams to 5-grams, enabling detection of both short phrases and longer contextual patterns.
+1. **Extended Convolutional Filters**: The optimal (2, 3, 4, 5) kernel size combination captures a broader range of n-gram patterns from bigrams to 5-grams, enabling detection of both short phrases and longer contextual patterns more effectively than traditional configurations.
 
-2. **Channel Optimization**: 128 channels provided optimal feature extraction capacity without overfitting, suggesting this configuration strikes an ideal balance between model complexity and generalization.
+2. **Enhanced Channel Architecture**: 256 channels provided superior feature extraction capacity, suggesting that news classification benefits from increased representational complexity to capture nuanced category distinctions.
 
-3. **Regularization**: The 0.5 dropout rate proved most effective, providing sufficient regularization to prevent overfitting while preserving model capacity.
+3. **Optimization Insights**: The comprehensive Optuna search revealed critical hyperparameter interactions:
+   - **Batch size scaling**: Larger batches (256) improved gradient stability and convergence
+   - **Learning rate sensitivity**: Moderate rates (~0.002) prevented both underfitting and instability
+   - **Regularization balance**: 0.5 dropout with minimal weight decay achieved optimal bias-variance tradeoff
 
-4. **Learning Dynamics**: The 1e-3 learning rate with weight decay enabled stable convergence within 5-6 epochs, demonstrating efficient optimization characteristics.
+4. **Generalization Analysis**: The 7.87% validation-test gap indicates potential overfitting to the validation set, suggesting the need for:
+   - **Cross-validation**: More robust validation strategies for hyperparameter selection
+   - **Regularization enhancement**: Additional techniques like data augmentation or ensemble methods
+   - **Architecture refinement**: Potential benefits from batch normalization or residual connections
 
-The architecture particularly excels at identifying category-specific terminology and phrase patterns. The high ROC AUC scores across all categories confirm that the learned convolutional features effectively distinguish between news domains, capturing both lexical and syntactic patterns unique to each category.
+5. **Computational Efficiency**: Despite increased complexity, the optimized architecture maintained reasonable training times (~4.5 hours for full optimization) while exploring a comprehensive hyperparameter space.
+
+The architecture successfully identifies category-specific terminology and phrase patterns, with Optuna optimization revealing that news classification benefits from more sophisticated convolutional architectures than traditional text classification tasks. However, the generalization gap highlights the importance of robust validation strategies in hyperparameter optimization.
 
 ### DistilBERT Transformer Model
 
@@ -427,21 +451,68 @@ Despite its superior performance, DistilBERT maintains reasonable computational 
 
 The exceptional performance of DistilBERT (94.70% accuracy, 99.32% ROC AUC) establishes it as the superior approach for news classification, demonstrating the effectiveness of pre-trained transformer models in capturing complex linguistic patterns and semantic relationships inherent in news text classification tasks.
 
+## Results and Discussion
+
+Working with these three different approaches taught me some surprising things about text classification that I didn't expect when I started this university project.
+
+### Comparative Performance Analysis
+
+The final scores really challenged what I thought would happen:
+
+**Simple Logistic Regression (91.53% accuracy)**: This was my "simple" baseline, but it actually performed better than my fancy neural network! It was fast to train, easy to understand, and worked really well. Sometimes the old methods are still the best.
+
+**TextCNN with Smart Optimization (84.43% test accuracy, but 92.31% on validation)**: This was the most interesting part of my project. I used Optuna to automatically find the best settings, and it looked amazing during training. But then it didn't work as well on new data. This taught me that even smart optimization can trick you - your model might just be memorizing the validation data instead of really learning.
+
+**DistilBERT Transformer (94.70% accuracy)**: This was the clear winner. It's a pre-trained model that already knows a lot about language, so it could understand the news articles much better than the other approaches.
+
+### Key Findings
+
+1. **Validation vs. Real Performance**: Just because your model looks good during training doesn't mean it will work well on new data. My TextCNN got 92% on validation but only 84% on the test set. This was a big lesson about overfitting.
+
+2. **Simple Can Beat Complex**: My basic Logistic Regression actually beat the neural network! It was faster, easier to understand, and more reliable. This showed me that newer doesn't always mean better.
+
+3. **Smart Optimization Tools Work**: Optuna saved me lots of time by stopping bad experiments early. It tested 20 different settings but only let 6 finish completely, saving about 60% of computing time.
+
+4. **Pre-trained Models Are Powerful**: DistilBERT won because it already learned from millions of texts before I even started. It's like having a student who already knows a lot about language before taking the news classification test.
+
+### Practical Implications
+
+**If you want something reliable and fast**: Use Logistic Regression. It got 91.53% accuracy, trains quickly, and you can understand how it makes decisions.
+
+**If you want to learn about neural networks**: Try TextCNN with Optuna optimization. You'll learn a lot about hyperparameter tuning, but be careful about overfitting to your validation data.
+
+**If you need the best accuracy**: Go with DistilBERT. It got 94.70% accuracy and works well on new data, though it needs more computing power.
+
+### Future Research Directions
+
+1. **Better Validation**: Find ways to test hyperparameter optimization that better predict how well models will work on completely new data.
+
+2. **Combining Methods**: Maybe combine the simple Logistic Regression with neural networks to get the best of both worlds.
+
+3. **Reducing Overfitting**: Try new techniques to make neural networks generalize better, so the validation and test scores are closer.
+
+4. **Lighter Transformers**: Look for ways to make models like DistilBERT even faster while keeping their accuracy.
+
+This project taught me that doing good experiments is just as important as having fancy algorithms. Using tools like Optuna and proper evaluation methods helped me understand what really works and what just looks good on paper.
+
 ## Conclusion
 
-This comparative study demonstrates the evolution and effectiveness of different text classification approaches for news categorization. The results reveal a clear progression in accuracy and capability across the three methodologies.
+This comparative study of three machine learning approaches for AG News classification revealed several important insights about text classification performance and methodology.
 
-The Logistic Regression baseline (90% accuracy) establishes that traditional machine learning with proper feature engineering remains highly effective for text classification tasks. Its computational efficiency and interpretability make it suitable for resource-constrained environments and applications requiring explainable predictions.
+The experimental results showed that **DistilBERT achieved the highest accuracy at 94.70%**, demonstrating the power of pre-trained transformer models for text understanding. However, the study also revealed that **traditional Logistic Regression performed surprisingly well at 91.53%**, actually outperforming the optimized TextCNN model (84.43% test accuracy) despite being much simpler.
 
-TextCNN (92% accuracy) represents the middle ground between traditional and modern approaches. The convolutional architecture successfully captures local patterns and hierarchical features while maintaining reasonable computational requirements. The systematic hyperparameter optimization demonstrates the importance of careful model tuning in achieving optimal performance.
+The most significant finding was the **generalization gap observed in the TextCNN approach**. While Optuna optimization achieved 92.31% validation accuracy, the test performance dropped to 84.43%, highlighting the critical importance of robust validation strategies in hyperparameter optimization. This 7.87% gap serves as a valuable lesson about the risks of overfitting to validation data, even when using sophisticated optimization techniques.
 
-DistilBERT (96% accuracy) showcases the power of pre-trained transformer models for text classification. The superior performance stems from sophisticated language understanding and contextual processing capabilities, though at increased computational cost.
+**Key contributions of this research include:**
 
-The study reveals that while more complex models achieve higher accuracy, the performance gains must be weighed against computational requirements and practical constraints. For production environments with strict latency requirements, the Logistic Regression baseline provides excellent performance with minimal computational overhead. Applications with moderate performance requirements benefit from TextCNN's balanced approach, while scenarios demanding maximum accuracy justify DistilBERT's computational complexity.
+1. **Empirical comparison** of three distinct approaches on a balanced news classification dataset
+2. **Demonstration of Optuna's effectiveness** in automated hyperparameter optimization, achieving 60% computational savings through intelligent pruning
+3. **Evidence that traditional methods remain competitive** - Logistic Regression's strong performance challenges assumptions about deep learning superiority in all scenarios
+4. **Identification of generalization challenges** in neural network optimization for text classification
 
-Future research directions include exploring ensemble methods combining multiple approaches, investigating domain adaptation techniques for specialized news categories, and developing efficient transformer variants that maintain high performance while reducing computational requirements.
+The study confirms that **model selection should consider not only accuracy but also reliability, interpretability, and computational requirements**. For practical applications requiring fast, interpretable results, Logistic Regression remains highly viable. For maximum accuracy where computational resources are available, DistilBERT provides superior performance with robust generalization.
 
-The comprehensive evaluation framework and standardized preprocessing pipeline established in this study provide a foundation for future text classification research and practical applications in news categorization systems.
+This research contributes to the understanding of text classification methodologies and provides a framework for future comparative studies in natural language processing applications.
 
 ## References
 
