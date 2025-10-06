@@ -58,7 +58,7 @@ Comprehensive visualizations were generated to illustrate dataset characteristic
 
 #### Figure 1: Overview Dashboard
 
-![Overview Dashboard](outputs/eda/overview_dashboard.png)
+![Overview Dashboard](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/eda/overview_dashboard.png)
 
 The overview dashboard presents six complementary visualizations that establish the fundamental characteristics of the AG News dataset. The class distribution pie chart (top-left) confirms perfect balance across all four categories, with each class containing exactly 25% of the total samples. This balanced distribution eliminates potential bias concerns and ensures fair model evaluation.
 
@@ -68,7 +68,7 @@ The train-test split visualization (bottom-left) confirms that the balanced dist
 
 #### Figure 2: Word Clouds Analysis
 
-![Word Clouds](outputs/eda/word_clouds_professional.png)
+![Word Clouds](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/eda/word_clouds_professional.png)
 
 The word cloud visualizations provide intuitive representations of vocabulary differences across news categories. Each quadrant represents a distinct category, with word size proportional to frequency within that category.
 
@@ -84,7 +84,7 @@ The minimal overlap between category-specific terms validates the hypothesis tha
 
 #### Figure 3: Top Words Analysis
 
-![Top Words Analysis](outputs/eda/top_words_analysis.png)
+![Top Words Analysis](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/eda/top_words_analysis.png)
 
 The top words analysis provides quantitative frequency analysis for the most discriminative terms in each category. Each subplot displays the 15 most frequent words after stop word removal, with horizontal bars indicating relative frequency.
 
@@ -100,7 +100,7 @@ The frequency analysis reveals minimal vocabulary overlap between categories, su
 
 #### Figure 4: Statistical Analysis Summary
 
-![Statistical Analysis](outputs/eda/statistical_analysis.png)
+![Statistical Analysis](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/eda/statistical_analysis.png)
 
 The statistical analysis summary provides comprehensive quantitative insights through six complementary visualizations. The heatmap (top-left) displays average statistics across categories, revealing subtle but consistent differences in text characteristics. World and Business articles show similar length patterns, while Sports articles tend to be slightly shorter and Science/Technology articles exhibit greater variability.
 
@@ -198,13 +198,13 @@ The following figures demonstrate the baseline model's classification performanc
 
 ##### Figure 7: Baseline Logistic Regression Confusion Matrix
 
-![Baseline Confusion Matrix](outputs/baseline_lr/plots/confusion_matrix_test.png)
+![Baseline Confusion Matrix](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/baseline_lr/plots/confusion_matrix_test.png)
 
 The confusion matrix reveals strong diagonal dominance, indicating accurate classification across all categories. Sports articles show the highest classification accuracy with minimal confusion with other categories. The most frequent misclassifications occur between World and Business news, reflecting their semantic similarity in covering economic and political topics. Science/Technology articles demonstrate clear separation from other categories, validating the effectiveness of technical vocabulary in classification.
 
 ##### Figure 8: Baseline Logistic Regression ROC Curves
 
-![Baseline ROC Curves](outputs/baseline_lr/plots/roc_curves_test.png)
+![Baseline ROC Curves](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/baseline_lr/plots/roc_curves_test.png)
 
 The ROC curves demonstrate exceptional discriminative performance with all individual class AUC scores exceeding 0.97. Sports articles achieve the highest individual AUC (approaching 0.99), while all categories maintain excellent separation from others. The curves' steep rise and proximity to the top-left corner confirm the model's ability to achieve high sensitivity while maintaining low false positive rates across all news categories.
 
@@ -309,13 +309,13 @@ The following figures demonstrate the TextCNN model's classification performance
 
 ##### Figure 5: TextCNN Confusion Matrix
 
-![TextCNN Confusion Matrix](outputs/textcnn/plots/confusion_matrix_test.png)
+![TextCNN Confusion Matrix](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/textcnn/plots/confusion_matrix_test.png)
 
 The confusion matrix reveals excellent classification performance across all news categories. The model demonstrates particularly strong performance in distinguishing between Sports and other categories, with minimal misclassification. The diagonal dominance indicates robust category separation, with most errors occurring between semantically related categories such as World and Business news.
 
 ##### Figure 6: TextCNN ROC Curves
 
-![TextCNN ROC Curves](outputs/textcnn/plots/roc_curves_test.png)
+![TextCNN ROC Curves](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/textcnn/plots/roc_curves_test.png)
 
 The ROC curves demonstrate exceptional discriminative capability with an overall AUC of 0.9824. All individual class AUC scores exceed 0.97, indicating excellent binary classification performance for each category versus all others. The curves' proximity to the top-left corner confirms the model's ability to achieve high true positive rates while maintaining low false positive rates across all categories.
 
@@ -416,13 +416,13 @@ The following figures demonstrate the DistilBERT model's superior classification
 
 ##### Figure 9: DistilBERT Confusion Matrix
 
-![DistilBERT Confusion Matrix](outputs/distilbert/plots/confusion_matrix_test.png)
+![DistilBERT Confusion Matrix](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/distilbert/plots/confusion_matrix_test.png)
 
 The confusion matrix reveals exceptional classification performance with strong diagonal dominance across all categories. DistilBERT demonstrates superior accuracy compared to previous models, with minimal misclassification errors. The model shows particularly strong performance in distinguishing between all news categories, with most confusion occurring between semantically related World and Business news. The high accuracy across all categories validates the effectiveness of pre-trained transformer representations for news classification.
 
 ##### Figure 10: DistilBERT ROC Curves
 
-![DistilBERT ROC Curves](outputs/distilbert/plots/roc_curves_test.png)
+![DistilBERT ROC Curves](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/distilbert/plots/roc_curves_test.png)
 
 The ROC curves demonstrate exceptional discriminative capability with an outstanding macro AUC of 0.9932 and micro AUC of 0.9943. All individual class curves approach the ideal top-left corner, indicating near-perfect separation between categories. The consistently high AUC scores across all classes (exceeding 0.99) confirm DistilBERT's superior ability to distinguish between news categories compared to traditional and CNN-based approaches.
 
