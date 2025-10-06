@@ -7,12 +7,19 @@ A comprehensive text classification project implementing multiple machine learni
 This project compares different text classification approaches:
 
 - **Baseline**: Logistic Regression with TF-IDF features
-- **TextCNN**: Convolutional Neural Network for text classification
+- **TextCNN**: Convolutional Neural Network with Optuna hyperparameter optimization
 - **DistilBERT**: Pre-trained transformer model fine-tuning
+
+## Key Features
+
+- **Advanced Hyperparameter Optimization**: Optuna integration with MedianPruner for intelligent trial pruning
+- **Comprehensive Experiment Tracking**: Weights & Biases (wandb) integration for real-time monitoring
+- **Intelligent Parameter Search**: Optuna's default TPE-based optimization for efficient hyperparameter exploration
+- **Professional Visualizations**: Confusion matrices, ROC curves, and parameter importance plots
 
 ## Dataset
 
-The AG News dataset contains news articles from 4 categories:
+The [AG News dataset](https://www.kaggle.com/datasets/amananandrai/ag-news-classification-dataset) contains news articles from 4 categories:
 - World
 - Sports  
 - Business
@@ -93,43 +100,92 @@ python baseline_lr.py
 
 Results saved to `outputs/baseline_lr/`
 
-### 3. TextCNN Model
+### 3. TextCNN Model with Optuna Optimization
 
-Train the Convolutional Neural Network:
+Train the Convolutional Neural Network with intelligent hyperparameter optimization:
 
 ```bash
-# Fast mode (recommended): 8 trials, 6 epochs
-uv run text_cnn.py fast
+# Default: 20 trials with MedianPruner optimization
+python text_cnn.py
 
-# Quick mode (testing): 1 trial, 3 epochs  
-uv run text_cnn.py quick
+# Custom number of trials
+python text_cnn.py 10
 
-# Full mode (thorough): 16 trials, 12 epochs
-uv run text_cnn.py full
-
-# Evaluate saved model
-uv run text_cnn.py evaluate
+# Evaluate saved best model
+python text_cnn.py evaluate
 ```
 
-Results saved to `outputs/textcnn/`
+**Optuna Features:**
+- **Intelligent Search**: 10+ hyperparameters optimized simultaneously
+- **Early Stopping**: MedianPruner stops unpromising trials (typically saves 60-70% compute time)
+- **Advanced Sampling**: TPE algorithm for efficient parameter space exploration
+- **Comprehensive Tracking**: Full wandb integration with trial-level metrics
+
+**Hyperparameters Optimized:**
+- Embedding dimensions: [100, 200, 300]
+- Convolutional channels: [128, 192, 256]
+- Kernel sizes: [(3,4,5), (2,3,4,5), (3,4,5,6)]
+- Dropout rates: 0.1-0.6
+- Learning rates: 1e-4 to 5e-3 (log scale)
+- Batch sizes: [64, 128, 256]
+- Weight decay, gradient clipping, optimizers
+
+Results saved to `outputs/textcnn/`:
+- Best model: `models/best_model.pt`
+- Trial results: `optuna_trials.csv`
+- Visualizations: confusion matrices, ROC curves
 
 ### 4. DistilBERT Model
 
 Fine-tune the pre-trained transformer:
 
 ```bash
-uv run distilbert_trainer.py
+python distilbert_trainer.py
 ```
 
 Results saved to `outputs/distilbert/`
 
+## Weights & Biases Integration
+
+All models include comprehensive experiment tracking with wandb:
+
+### Setup wandb (Optional but Recommended)
+
+```bash
+# Install wandb
+pip install wandb
+
+# Login to your account
+wandb login
+```
+
+### Features Tracked:
+- **Real-time Metrics**: Loss, accuracy, learning rate per batch/epoch
+- **Hyperparameter Logging**: Complete configuration for reproducibility
+- **Model Artifacts**: Saved model checkpoints with versioning
+- **Visualizations**: Confusion matrices, ROC curves automatically uploaded
+- **Trial Comparison**: Side-by-side comparison of different hyperparameter combinations
+- **Parameter Importance**: Optuna integration shows which parameters matter most
+
+### View Results:
+Visit [wandb.ai](https://wandb.ai) to view your experiment dashboard with:
+- Training curves and metrics
+- Hyperparameter sweep visualizations
+- Model performance comparisons
+- Parameter importance plots
+
 ## Model Performance
 
-| Model | Test Accuracy | ROC AUC |
-|-------|--------------|---------|
-| Logistic Regression | 91.53% | 0.983 |
-| TextCNN | 90.09% | 0.979 |
-| DistilBERT | 94.70% | 0.993 |
+| Model               | Test Accuracy | Validation Accuracy | ROC AUC | Notes                        |
+| ------------------- | ------------- | ------------------- | ------- | ---------------------------- |
+| Logistic Regression | 91.53%        | 91.88%              | 0.983   | Fast, interpretable baseline |
+| TextCNN (Optuna)    | 84.43%        | 92.31%              | 0.982   | Shows generalization gap     |
+| DistilBERT          | 94.70%        | 94.94%              | 0.993   | Best overall performance     |
+
+**Key Insights:**
+- **DistilBERT** achieves the highest accuracy with excellent generalization
+- **Logistic Regression** surprisingly outperforms TextCNN on test data despite being simpler
+- **TextCNN with Optuna** demonstrates the importance of proper validation - high validation accuracy (92.31%) but lower test performance (84.43%) reveals overfitting challenges
 
 ## Requirements
 
@@ -137,6 +193,8 @@ Results saved to `outputs/distilbert/`
 - PyTorch 2.8.0+
 - Transformers 4.57.0+
 - scikit-learn 1.7.2+
+- **optuna**: For hyperparameter optimization
+- **wandb**: For experiment tracking (optional but recommended)
 - See `pyproject.toml` for complete dependencies
 
 ## Hardware Requirements
@@ -169,7 +227,9 @@ Results saved to `outputs/distilbert/`
 - Use `uv` for fastest dependency installation
 - Enable GPU acceleration when available
 - Adjust `num_workers` based on your CPU cores
-- Use fast mode for initial testing
+- **For TextCNN optimization**: Start with fewer trials (5-10) for initial testing
+- **wandb Integration**: Set up wandb for better experiment tracking and visualization
+- **Optuna Pruning**: Let MedianPruner stop bad trials early to save compute time
 
 ## Contributing
 
