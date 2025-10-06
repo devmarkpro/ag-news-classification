@@ -10,6 +10,10 @@ import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 import multiprocessing as mp
+import nltk
+from nltk.corpus import stopwords
+
+nltk.download("stopwords")
 
 warnings.filterwarnings("ignore")
 
@@ -17,7 +21,124 @@ plt.style.use("seaborn-v0_8")
 sns.set_palette("husl")
 plt.rcParams["figure.figsize"] = (12, 8)
 plt.rcParams["font.size"] = 12
-
+additional_stopwords = {
+    "said",
+    "says",
+    "say",
+    "told",
+    "according",
+    "reuters",
+    "ap",
+    "afp",
+    "news",
+    "report",
+    "reports",
+    "reported",
+    "reporting",
+    "sources",
+    "source",
+    "officials",
+    "official",
+    "spokesman",
+    "spokesperson",
+    "statement",
+    "announced",
+    "announce",
+    "announcement",
+    "conference",
+    "press",
+    "media",
+    "journalist",
+    "journalists",
+    "article",
+    "story",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+    "today",
+    "yesterday",
+    "tomorrow",
+    "week",
+    "month",
+    "year",
+    "years",
+    "time",
+    "times",
+    "day",
+    "days",
+    "hour",
+    "hours",
+    "minute",
+    "minutes",
+    "people",
+    "person",
+    "man",
+    "woman",
+    "men",
+    "women",
+    "group",
+    "groups",
+    "number",
+    "numbers",
+    "percent",
+    "percentage",
+    "million",
+    "billion",
+    "thousand",
+    "hundreds",
+    "dozens",
+    "several",
+    "many",
+    "much",
+    "most",
+    "some",
+    "few",
+    "little",
+    "large",
+    "small",
+    "big",
+    "major",
+    "minor",
+    "new",
+    "old",
+    "first",
+    "last",
+    "next",
+    "previous",
+    "recent",
+    "latest",
+    "early",
+    "late",
+    "long",
+    "short",
+    "high",
+    "low",
+    "good",
+    "bad",
+    "best",
+    "worst",
+    "better",
+    "worse",
+    "great",
+    "small",
+    "large",
+}
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
 
@@ -29,8 +150,6 @@ class AGNewsEDA:
         self.colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4"]
 
         os.makedirs("outputs/eda", exist_ok=True)
-
-        print("Starting Academic-Grade AG News EDA...")
 
     def load_data(self):
         print("Loading data...")
@@ -196,85 +315,31 @@ class AGNewsEDA:
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         axes = axes.flatten()
 
+        english_stopwords = set(stopwords.words("english"))
+
+        # Add additional common words and news-specific stop words
+
+        # Combine all stop words
+        comprehensive_stopwords = english_stopwords.union(additional_stopwords)
+
         for i, (class_idx, class_name) in enumerate(self.class_names.items()):
             class_text = " ".join(
                 self.full_df[self.full_df["Class Index"] == class_idx]["text"]
             )
 
-            # Clean text more thoroughly
             class_text = re.sub(r"[^a-zA-Z\s]", "", class_text.lower())
 
-            # Remove common stop words
-            stop_words = {
-                "the",
-                "and",
-                "for",
-                "are",
-                "with",
-                "his",
-                "they",
-                "said",
-                "this",
-                "have",
-                "from",
-                "one",
-                "had",
-                "but",
-                "not",
-                "what",
-                "all",
-                "were",
-                "when",
-                "there",
-                "can",
-                "who",
-                "will",
-                "been",
-                "more",
-                "her",
-                "was",
-                "she",
-                "that",
-                "their",
-                "has",
-                "would",
-                "been",
-                "than",
-                "its",
-                "him",
-                "two",
-                "may",
-                "now",
-                "only",
-                "see",
-                "time",
-                "very",
-                "after",
-                "first",
-                "well",
-                "way",
-                "even",
-                "new",
-                "want",
-                "because",
-                "any",
-                "these",
-                "give",
-                "day",
-                "most",
-                "us",
-            }
-
-            # Create word cloud with custom parameters
             wordcloud = WordCloud(
                 width=800,
                 height=600,
                 background_color="white",
                 colormap="tab10",
                 max_words=150,
-                stopwords=stop_words,
+                stopwords=comprehensive_stopwords,
                 relative_scaling=0.5,
                 min_font_size=10,
+                collocations=False,  # Avoid repeated phrases
+                min_word_length=3,  # Filter out very short words
             ).generate(class_text)
 
             axes[i].imshow(wordcloud, interpolation="bilinear")
@@ -298,6 +363,11 @@ class AGNewsEDA:
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         axes = axes.flatten()
 
+        english_stopwords = set(stopwords.words("english"))
+
+        # Combine all stop words
+        comprehensive_stopwords = english_stopwords.union(additional_stopwords)
+
         for i, (class_idx, class_name) in enumerate(self.class_names.items()):
             class_text = " ".join(
                 self.full_df[self.full_df["Class Index"] == class_idx]["text"]
@@ -307,70 +377,11 @@ class AGNewsEDA:
             words = re.findall(r"\b[a-zA-Z]{3,}\b", class_text.lower())
             word_counts = Counter(words)
 
-            # Remove common stop words
-            stop_words = {
-                "the",
-                "and",
-                "for",
-                "are",
-                "with",
-                "his",
-                "they",
-                "said",
-                "this",
-                "have",
-                "from",
-                "one",
-                "had",
-                "but",
-                "not",
-                "what",
-                "all",
-                "were",
-                "when",
-                "there",
-                "can",
-                "who",
-                "will",
-                "been",
-                "more",
-                "her",
-                "was",
-                "she",
-                "that",
-                "their",
-                "has",
-                "would",
-                "been",
-                "than",
-                "its",
-                "him",
-                "two",
-                "may",
-                "now",
-                "only",
-                "see",
-                "time",
-                "very",
-                "after",
-                "first",
-                "well",
-                "way",
-                "even",
-                "new",
-                "want",
-                "because",
-                "any",
-                "these",
-                "give",
-                "day",
-                "most",
-                "us",
-            }
+            # Remove comprehensive stop words
             filtered_counts = {
                 word: count
                 for word, count in word_counts.items()
-                if word not in stop_words
+                if word not in comprehensive_stopwords
             }
 
             # Get top 15 words
@@ -609,67 +620,7 @@ class AGNewsEDA:
 
         print(f"Identified {n_topics} topics from the text data")
 
-    def generate_summary_report(self):
-        print("\nGenerating academic summary report...")
-
-        total_samples = len(self.full_df)
-        avg_text_length = self.full_df["text_length"].mean()
-        class_balance = self.full_df["class_name"].value_counts()
-
-        report = f"""
-# AG News Dataset - Exploratory Data Analysis Report
-
-## Executive Summary
-This comprehensive EDA analyzes the AG News dataset, a collection of {total_samples:,} news articles across 4 categories.
-
-## Dataset Overview
-- **Total Samples**: {total_samples:,}
-- **Training Samples**: {len(self.train_df):,}
-- **Test Samples**: {len(self.test_df):,}
-- **Classes**: 4 (World, Sports, Business, Sci/Tech)
-- **Average Text Length**: {avg_text_length:.0f} characters
-
-## Key Findings
-
-### 1. Class Distribution
-- Dataset is perfectly balanced with {class_balance.iloc[0]:,} samples per class
-- Equal representation ensures unbiased model training
-
-### 2. Text Characteristics
-- Average text length: {avg_text_length:.0f} characters
-- Average word count: {self.full_df['word_count'].mean():.0f} words
-- Consistent structure across all categories
-
-### 3. Content Analysis
-- Each category shows distinct vocabulary patterns
-- Clear semantic separation between news topics
-- Rich linguistic diversity within each category
-
-## Visualizations Generated
-1. **Overview Dashboard**: Comprehensive dataset statistics
-2. **Word Clouds**: Visual representation of key terms per category
-3. **Top Words Analysis**: Most frequent terms by news category
-4. **Statistical Analysis**: Detailed statistical summaries
-5. **Topic Modeling**: Latent topics discovered in the text
-
-## Academic Value
-This EDA demonstrates:
-- Statistical rigor in data analysis
-- Professional visualization techniques
-- Advanced NLP methodologies
-- Clear insights for classification tasks
-
-Generated on: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
-        """
-
-        with open("outputs/eda/academic_report.md", "w") as f:
-            f.write(report)
-
-        print("Academic report generated: outputs/eda/academic_report.md")
-
     def run_complete_eda(self):
-        print("Starting Academic-Grade AG News EDA Pipeline...")
-
         self.load_data()
 
         self.create_overview_dashboard()
@@ -678,20 +629,9 @@ Generated on: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
         self.statistical_analysis()
         self.topic_modeling_visualization()
 
-        # Generate summary
-        self.generate_summary_report()
-
-        print("\nAcademic EDA Complete!")
-        print("Generated visualizations:")
-        print("   • Overview Dashboard (comprehensive statistics)")
-        print("   • Professional Word Clouds")
-        print("   • Top Words Analysis")
-        print("   • Statistical Analysis Summary")
-        print("   • Topic Modeling Visualization")
-        print("   • Academic Summary Report")
-        print(
-            "\nAll outputs saved to outputs/eda/ - Perfect for academic presentation!"
-        )
+        print("EDA completed successfully!")
+        # blue color print
+        print("\033[94mOutput stored in outputs/eda/\033[0m")
 
 
 def main():
