@@ -319,6 +319,34 @@ The confusion matrix reveals excellent classification performance across all new
 
 The ROC curves demonstrate exceptional discriminative capability with an overall AUC of 0.9824. All individual class AUC scores exceed 0.97, indicating excellent binary classification performance for each category versus all others. The curves' proximity to the top-left corner confirms the model's ability to achieve high true positive rates while maintaining low false positive rates across all categories.
 
+#### Optuna Training Dynamics Visualization
+
+The following figures provide detailed insights into the Optuna optimization process and training dynamics of the best-performing TextCNN model:
+
+##### Figure 7: Best Model Training Progress - Validation Accuracy
+
+![Best Model Validation Accuracy](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/textcnn/plots/optuna/best_model_val_acc.png)
+
+This plot shows the validation accuracy progression of the best-performing model (Trial 3) throughout its training epochs. The curve demonstrates rapid initial learning, with accuracy climbing from approximately 82% to over 90% within the first 40 training steps. The model then continues to improve more gradually, reaching its peak validation accuracy of 92.31% around step 160. The smooth, monotonic increase indicates stable training dynamics without significant oscillations or overfitting during the training process.
+
+##### Figure 8: Best Model Training Progress - Validation Loss
+
+![Best Model Validation Loss](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/textcnn/plots/optuna/best_model_val_loss.png)
+
+The validation loss curve complements the accuracy plot, showing a steep initial decrease from approximately 0.67 to 0.43 within the first 60 steps, followed by gradual convergence to around 0.41. The smooth exponential decay pattern indicates effective learning without instability. The loss stabilization after step 80 suggests the model reached its optimal performance capacity, with minimal improvement in later epochs.
+
+##### Figure 9: Optuna Trial Comparison - Validation Accuracy Across All Trials
+
+![Validation Accuracy Across Trials](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/textcnn/plots/optuna/validation_accuracy.png)
+
+This comprehensive view displays the validation accuracy trajectories for the first 10 Optuna trials, illustrating the dramatic performance variation across different hyperparameter configurations. The final model (teal line) demonstrates superior and stable performance, consistently achieving the highest accuracy. Several trials (trial_019, trial_018, trial_016) show competitive performance around 90-91%, while others exhibit significantly lower performance or early termination due to Optuna's pruning mechanism. Trial_013 (green line) shows particularly poor performance, starting at only 35% accuracy, demonstrating how critical proper hyperparameter selection is for TextCNN performance.
+
+##### Figure 10: Optuna Trial Comparison - Validation Loss Across All Trials
+
+![Validation Loss Across Trials](https://raw.githubusercontent.com/devmarkpro/ag-news-classification/main/outputs/textcnn/plots/optuna/validation_loss.png)
+
+The validation loss comparison reveals the optimization landscape across different trials. The final model maintains the lowest and most stable loss trajectory (teal line), converging to approximately 0.41. Poor-performing trials like trial_013 show high initial loss (>1.3) and unstable training dynamics. The plot clearly illustrates how Optuna's MedianPruner effectively identified and terminated unpromising trials early, as evidenced by the truncated lines for several trials. The diversity in loss trajectories highlights the sensitivity of TextCNN performance to hyperparameter choices and validates Optuna's role in navigating this complex optimization space.
+
 #### Discussion of Results
 
 The Optuna-optimized TextCNN demonstrates sophisticated pattern recognition capabilities, though with notable generalization challenges:
