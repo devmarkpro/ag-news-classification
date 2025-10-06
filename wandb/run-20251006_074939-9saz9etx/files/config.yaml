@@ -1,0 +1,44 @@
+_wandb:
+    value:
+        cli_version: 0.22.1
+        e:
+            kwqxszla8exql471zr4oc457xlcm9jr8:
+                codePath: text_cnn.py
+                codePathLocal: text_cnn.py
+                email: mark.karamyar@gmail.com
+                executable: /Users/mark/dev/cu-stuff/ag-news-classification/.venv/bin/python3
+                git:
+                    commit: 37abec4d356596d2ce83fac7a863e40cb88ecbb0
+                    remote: git@github.com:devmarkpro/ag-news-classification.git
+                host: Nastarans-MacBook-Pro.local
+                os: macOS-26.0.1-arm64-arm-64bit-Mach-O
+                program: /Users/mark/dev/cu-stuff/ag-news-classification/text_cnn.py
+                python: CPython 3.13.5
+                root: /Users/mark/dev/cu-stuff/ag-news-classification
+                startedAt: "2025-10-06T05:49:39.841892Z"
+                writerId: kwqxszla8exql471zr4oc457xlcm9jr8
+        m: []
+        python_version: 3.13.5
+        t:
+            "1":
+                - 1
+                - 5
+                - 35
+                - 40
+                - 53
+            "2":
+                - 1
+                - 5
+                - 35
+                - 40
+                - 53
+            "3":
+                - 2
+                - 17
+            "4": 3.13.5
+            "5": 0.22.1
+            "12": 0.22.1
+            "13": darwin-arm64
+direction:
+    value:
+        - MAXIMIZE

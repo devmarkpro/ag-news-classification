@@ -208,7 +208,7 @@ __marimo__/
 
 artifacts/
 # logs/
-wandb/
+# wandb/
 out-distilbert
-*.pt
+# *.pt
 outputs/distilbert/models

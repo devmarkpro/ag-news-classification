@@ -1,0 +1,1 @@
+{"grad_clip":1.5,"_wandb":{"runtime":0},"_step":0,"lr":0.001752216257233483,"weight_decay":6.870346532352737e-06,"optimizer":"adam","max_len":200,"_runtime":0,"channels":256,"batch_size":128,"dropout":0.5,"val_acc":0.8867083333333333,"_timestamp":1.759728252982711e+09,"emb_dim":100,"kernel_sizes":[2,3,4,5]}

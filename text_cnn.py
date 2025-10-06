@@ -6,14 +6,30 @@ from torch import nn
 from collections import Counter
 import random
 import warnings
-from sklearn.model_selection import train_test_split, ParameterSampler
+from sklearn.model_selection import train_test_split
 import multiprocessing as mp
 from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+from torchtext.data.utils import get_tokenizer
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import nltk
+import wandb
+import optuna
+from optuna.integration.wandb import WeightsAndBiasesCallback
 
 warnings.filterwarnings("ignore")
+nltk.download("stopwords", quiet=True)
+nltk.download("punkt", quiet=True)
+nltk.download("punkt_tab", quiet=True)
+nltk.download("wordnet", quiet=True)
+
+
+tokenizer = get_tokenizer("basic_english")
+stop_words = set(stopwords.words("english"))
+lemmatizer = WordNetLemmatizer()
 
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
@@ -28,14 +44,10 @@ def set_seed(seed: int = 42):
         torch.mps.manual_seed(seed)
 
 
-def basic_tokenize(text: str):
-    return text.lower().strip().replace("\n", " ").split()
-
-
 def build_vocab(texts, min_freq=2, max_size=50000):
     counter = Counter()
     for t in texts:
-        counter.update(basic_tokenize(t))
+        counter.update(tokenizer(t))
     stoi = {"<pad>": 0, "<unk>": 1}
     for tok, freq in counter.most_common():
         if freq < min_freq:
@@ -48,7 +60,7 @@ def build_vocab(texts, min_freq=2, max_size=50000):
 
 
 def encode(text, stoi, max_len):
-    toks = basic_tokenize(text)
+    toks = tokenizer(text)
     ids = [stoi.get(t, 1) for t in toks]
     if len(ids) >= max_len:
         return ids[:max_len]
@@ -106,13 +118,35 @@ def accuracy(logits, labels):
 
 
 def run_epoch(
-    dataloader, model, criterion, optimizer=None, device="cpu", grad_clip=None
+    dataloader,
+    model,
+    criterion,
+    optimizer=None,
+    scheduler=None,
+    device="cpu",
+    grad_clip=None,
+    epoch=None,
+    log_interval=50,
+    verbose=True,
+    log_wandb=True,
 ):
     is_train = optimizer is not None
     model.train(is_train)
     total_loss, total_acc, total_n = 0.0, 0.0, 0
 
-    for x, y in dataloader:
+    # Initialize logging variables
+    batch_losses = []
+    batch_accs = []
+    learning_rates = []
+
+    mode = "Train" if is_train else "Val"
+    total_batches = len(dataloader)
+
+    if verbose and epoch is not None:
+        print(f"\n{mode} Epoch {epoch} - {total_batches} batches")
+        print("-" * 50)
+
+    for batch_idx, (x, y) in enumerate(dataloader):
         try:
             x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
         except Exception as e:
@@ -122,20 +156,95 @@ def run_epoch(
 
         logits = model(x)
         loss = criterion(logits, y)
+        batch_acc = accuracy(logits, y)
 
         if is_train:
+            # Get current learning rate before optimizer step
+            current_lr = optimizer.param_groups[0]["lr"]
+            learning_rates.append(current_lr)
+
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             if grad_clip:
-                nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+                grad_norm = nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
             optimizer.step()
+            if scheduler is not None:
+                scheduler.step()
 
         bs = x.size(0)
-        total_loss += loss.item() * bs
-        total_acc += accuracy(logits, y) * bs
+        batch_loss = loss.item()
+        batch_losses.append(batch_loss)
+        batch_accs.append(batch_acc)
+
+        total_loss += batch_loss * bs
+        total_acc += batch_acc * bs
         total_n += bs
 
-    return total_loss / total_n, total_acc / total_n
+        # Log batch progress
+        if verbose and is_train and (batch_idx + 1) % log_interval == 0:
+            avg_loss = total_loss / total_n
+            avg_acc = total_acc / total_n
+            current_lr = optimizer.param_groups[0]["lr"] if optimizer else 0
+            progress = (batch_idx + 1) / total_batches * 100
+
+            print(
+                f"  Batch {batch_idx + 1:4d}/{total_batches} ({progress:5.1f}%) | "
+                f"Loss: {batch_loss:.4f} (avg: {avg_loss:.4f}) | "
+                f"Acc: {batch_acc:.4f} (avg: {avg_acc:.4f}) | "
+                f"LR: {current_lr:.2e}"
+            )
+
+            # Log to wandb
+            if log_wandb and wandb.run is not None:
+                wandb.log(
+                    {
+                        f"{mode.lower()}_batch_loss": batch_loss,
+                        f"{mode.lower()}_batch_acc": batch_acc,
+                        f"{mode.lower()}_avg_loss": avg_loss,
+                        f"{mode.lower()}_avg_acc": avg_acc,
+                        "learning_rate": current_lr,
+                        "batch": batch_idx + 1,
+                        "epoch": epoch if epoch is not None else 0,
+                    }
+                )
+
+    # Calculate final metrics
+    final_loss = total_loss / total_n
+    final_acc = total_acc / total_n
+
+    # Log epoch summary
+    if verbose:
+        if is_train and learning_rates:
+            final_lr = learning_rates[-1]
+            print(f"\n{mode} Summary:")
+            print(f"  Final Loss: {final_loss:.4f} | Final Acc: {final_acc:.4f}")
+            print(f"  Final LR: {final_lr:.2e}")
+            print(
+                f"  Loss std: {np.std(batch_losses):.4f} | Acc std: {np.std(batch_accs):.4f}"
+            )
+        else:
+            print(f"\n{mode} Summary:")
+            print(f"  Final Loss: {final_loss:.4f} | Final Acc: {final_acc:.4f}")
+            print(
+                f"  Loss std: {np.std(batch_losses):.4f} | Acc std: {np.std(batch_accs):.4f}"
+            )
+
+    # Log epoch summary to wandb
+    if log_wandb and wandb.run is not None:
+        log_dict = {
+            f"{mode.lower()}_epoch_loss": final_loss,
+            f"{mode.lower()}_epoch_acc": final_acc,
+            f"{mode.lower()}_loss_std": np.std(batch_losses),
+            f"{mode.lower()}_acc_std": np.std(batch_accs),
+            "epoch": epoch if epoch is not None else 0,
+        }
+
+        if is_train and learning_rates:
+            log_dict["final_learning_rate"] = learning_rates[-1]
+
+        wandb.log(log_dict)
+
+    return final_loss, final_acc
 
 
 def get_device():
@@ -222,44 +331,54 @@ def plot_roc_curves_textcnn(y_true, y_prob, class_names, save_path=None):
     return roc_auc
 
 
-def quick_search_mode():
-    return {
-        "emb_dim": [100],
-        "channels": [128],
-        "kernel_sizes": [(3, 4, 5)],
-        "dropout": [0.3],
-        "lr": [1e-3],
-        "weight_decay": [1e-4],
-        "batch_size": [128],
-        "max_len": [200],
-        "epochs": [3],
-        "patience": [1],
-        "grad_clip": [1.0],
-        "optimizer": ["adamw"],
-    }
-
-
-def main(mode="fast"):
-    print(f"Starting TextCNN training for AG News classification (mode: {mode})")
-
-    set_seed(42)
-
-    data_path = "data/"
-    class_names = ["World", "Sports", "Business", "Sci/Tech"]
-    class_names_dict = {i + 1: name for i, name in enumerate(class_names)}
-
-    train_df = pd.read_csv(f"{data_path}/train.csv")
-    test_df = pd.read_csv(f"{data_path}/test.csv")
-
-    df = train_df.copy(deep=True)
+def preprocess_data(df):
     df["text"] = df["Title"].astype(str) + ". " + df["Description"].astype(str)
     df["label"] = df["Class Index"]
     df = df[["text", "label"]]
 
-    test_df = test_df.copy(deep=True)
+    # convert to lowercase
+    df["text"] = df["text"].str.lower()
+
+    # remove extra whitespace
+    df["text"] = df["text"].str.replace(r"\s+", " ", regex=True)
+
+    # remove new lines
+    df["text"] = df["text"].str.replace(r"\n", "", regex=True)
+
+    df["text"] = df["text"].apply(
+        lambda x: " ".join([word for word in x.split() if word not in stop_words])
+    )
+
+    df["text"] = df["text"].apply(
+        lambda x: " ".join([lemmatizer.lemmatize(word) for word in x.split()])
+    )
+
+    # remove special characters
+    df["text"] = df["text"].str.replace(r"[^a-zA-Z0-9 ]", "", regex=True)
+
+    # remove single characters
+    df["text"] = df["text"].str.replace(r"\b\w\b", "", regex=True)
+
+    return df
+
+
+def main(n_trials=20):
+    print(
+        f"Starting TextCNN hyperparameter optimization with Optuna ({n_trials} trials)"
+    )
+
+    set_seed(42)
+
+    data_path = "data/"
+
+    df = pd.read_csv(f"{data_path}/train.csv")
+    test_df = pd.read_csv(f"{data_path}/test.csv")
+
+    df = preprocess_data(df)
+
     test_df["text"] = (
         test_df["Title"].astype(str) + ". " + test_df["Description"].astype(str)
-    )
+    ).str.lower()
     test_df["label"] = test_df["Class Index"]
     test_df = test_df[["text", "label"]]
 
@@ -280,16 +399,53 @@ def main(mode="fast"):
         df, test_size=0.2, random_state=42, stratify=df["label"]
     )
 
-    def train_eval_textcnn(cfg, train_df, val_df, trial_idx=0, seed=42, fast_mode=True):
+    def objective(trial):
         """
-        cfg: dict with keys:
-        emb_dim, channels, kernel_sizes (tuple), dropout, lr, weight_decay,
-        batch_size, max_len, epochs, patience, grad_clip, optimizer ('adam'|'adamw')
-        Returns dict with metrics and the path to the best checkpoint for this trial.
+        Optuna objective function for hyperparameter optimization.
         """
-        set_seed(seed + trial_idx)
+        # Suggest hyperparameters
+        cfg = {
+            "emb_dim": trial.suggest_categorical("emb_dim", [100, 200, 300]),
+            "channels": trial.suggest_categorical("channels", [128, 192, 256]),
+            "kernel_sizes": trial.suggest_categorical(
+                "kernel_sizes", [(3, 4, 5), (2, 3, 4, 5), (3, 4, 5, 6)]
+            ),
+            "dropout": trial.suggest_float("dropout", 0.1, 0.6, step=0.1),
+            "lr": trial.suggest_float("lr", 1e-4, 5e-3, log=True),
+            "weight_decay": trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True),
+            "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256]),
+            "max_len": trial.suggest_categorical("max_len", [160, 200, 256]),
+            "epochs": 20,
+            "patience": 3,
+            "grad_clip": trial.suggest_float("grad_clip", 0.5, 2.0, step=0.5),
+            "optimizer": trial.suggest_categorical("optimizer", ["adam", "adamw"]),
+        }
 
-        # --- Data ---
+        # Initialize wandb for this trial
+        wandb.init(
+            project="ag-news-textcnn-optuna",
+            name=f"trial_{trial.number:03d}",
+            config={
+                **cfg,
+                "trial_number": trial.number,
+                "vocab_size": vocab_size,
+                "device": device,
+            },
+            reinit=True,
+            tags=["textcnn", "ag-news", "optuna"],
+        )
+
+        try:
+            result = train_textcnn_single(cfg, train_df_, val_df_, trial)
+            wandb.finish()
+            return result["val_acc"]
+        except Exception as e:
+            print(f"Trial {trial.number} failed: {e}")
+            wandb.log({"error": str(e), "status": "failed"})
+            wandb.finish()
+            raise optuna.TrialPruned()
+
+    def train_textcnn_single(cfg, train_df, val_df, trial=None):
         ds_tr = AGNewsDataset(train_df, stoi, max_len=cfg["max_len"])
         ds_va = AGNewsDataset(val_df, stoi, max_len=cfg["max_len"])
         dl_tr = DataLoader(
@@ -297,14 +453,14 @@ def main(mode="fast"):
             batch_size=cfg["batch_size"],
             shuffle=True,
             num_workers=num_workers,
-            pin_memory=device != "cpu",  # Enable pin_memory for GPU devices
+            pin_memory=device != "cuda",
         )
         dl_va = DataLoader(
             ds_va,
             batch_size=cfg["batch_size"],
             shuffle=False,
             num_workers=num_workers,
-            pin_memory=device != "cpu",  # Enable pin_memory for GPU devices
+            pin_memory=device != "cuda",
         )
 
         # --- Model ---
@@ -318,6 +474,9 @@ def main(mode="fast"):
             pad_idx=0,
         ).to(device)
 
+        # Log model architecture to wandb
+        wandb.watch(model, log="all", log_freq=100)
+
         # --- Optimizer ---
         if cfg["optimizer"].lower() == "adam":
             opt = torch.optim.Adam(
@@ -327,172 +486,207 @@ def main(mode="fast"):
             opt = torch.optim.AdamW(
                 model.parameters(), lr=cfg["lr"], weight_decay=cfg["weight_decay"]
             )
-
-        crit = nn.CrossEntropyLoss()
+        sched = torch.optim.lr_scheduler.OneCycleLR(
+            opt, max_lr=cfg["lr"], steps_per_epoch=len(dl_tr), epochs=cfg["epochs"]
+        )
+        crit = nn.CrossEntropyLoss(label_smoothing=0.05)
 
         # --- Train with early stopping ---
         best_val_acc, best_epoch = -1.0, -1
         patience_left = cfg["patience"]
-        ckpt_path = f"tune_trial{trial_idx:03d}_best.pt"
+        ckpt_path = "best_model.pt"
 
         try:
             for epoch in range(1, cfg["epochs"] + 1):
-                # FIXED: Pass device parameter to run_epoch
                 tr_loss, tr_acc = run_epoch(
-                    dl_tr, model, crit, opt, device=device, grad_clip=cfg["grad_clip"]
+                    dl_tr,
+                    model,
+                    crit,
+                    opt,
+                    sched,
+                    device=device,
+                    grad_clip=cfg["grad_clip"],
+                    epoch=epoch,
+                    log_interval=50,
+                    verbose=True,
                 )
-                va_loss, va_acc = run_epoch(dl_va, model, crit, device=device)
+                va_loss, va_acc = run_epoch(
+                    dl_va, model, crit, device=device, epoch=epoch, verbose=True
+                )
 
-                # Only print every 2nd epoch in fast mode to reduce output
-                if not fast_mode or epoch % 2 == 0 or epoch == cfg["epochs"]:
-                    print(
-                        f"[trial {trial_idx:02d}] ep {epoch:02d}/{cfg['epochs']}"
-                        f" | train {tr_loss:.4f}/{tr_acc:.4f} | val {va_loss:.4f}/{va_acc:.4f}"
-                    )
+                # Print epoch results
+                print(
+                    f"Epoch {epoch:02d}/{cfg['epochs']} | "
+                    f"train {tr_loss:.4f}/{tr_acc:.4f} | val {va_loss:.4f}/{va_acc:.4f}"
+                )
+
+                # Log epoch summary to wandb
+                wandb.log(
+                    {
+                        "train_loss": tr_loss,
+                        "train_acc": tr_acc,
+                        "val_loss": va_loss,
+                        "val_acc": va_acc,
+                        "epoch": epoch,
+                    }
+                )
+
+                # Report intermediate value to Optuna for pruning
+                if trial is not None:
+                    trial.report(va_acc, epoch)
+                    if trial.should_prune():
+                        print(f"Trial pruned at epoch {epoch}")
+                        raise optuna.TrialPruned()
 
                 if va_acc > best_val_acc:
                     best_val_acc, best_epoch = va_acc, epoch
                     patience_left = cfg["patience"]
                     torch.save(model.state_dict(), ckpt_path)
+
+                    # Log best metrics to wandb
+                    wandb.log(
+                        {
+                            "best_val_acc": best_val_acc,
+                            "best_epoch": best_epoch,
+                        }
+                    )
                 else:
                     patience_left -= 1
                     if patience_left <= 0:
-                        if fast_mode:
-                            print(
-                                f"[trial {trial_idx:02d}] early stopping at epoch {epoch}"
-                            )
+                        print(f"Early stopping at epoch {epoch}")
                         break
 
         except RuntimeError as e:
             # Gracefully handle OOM or other runtime issues
-            print(f"[trial {trial_idx:02d}] RuntimeError: {e}")
-            # FIXED: Clear cache for both CUDA and MPS
+            print(f"RuntimeError: {e}")
+
+            # Log error to wandb
+            wandb.log({"error": str(e), "status": "failed"})
+
+            # Clear cache for both CUDA and MPS
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             elif torch.backends.mps.is_available():
                 torch.mps.empty_cache()
             return {
-                "trial": trial_idx,
                 "status": "error",
                 "msg": str(e),
                 "val_acc": np.nan,
                 "val_loss": np.nan,
                 "best_epoch": -1,
                 "ckpt": None,
-                "config": cfg,
             }
 
+        # Log final results to wandb
+        wandb.log(
+            {
+                "final_best_val_acc": float(best_val_acc),
+                "final_val_loss": float(va_loss),
+                "final_best_epoch": best_epoch,
+                "status": "completed",
+            }
+        )
+
+        # Save model as wandb artifact
+        if os.path.exists(ckpt_path):
+            artifact = wandb.Artifact("best_model", type="model")
+            artifact.add_file(ckpt_path)
+            wandb.log_artifact(artifact)
+
         return {
-            "trial": trial_idx,
             "status": "ok",
             "msg": "",
             "val_acc": float(best_val_acc),
             "val_loss": float(va_loss),
             "best_epoch": best_epoch,
             "ckpt": ckpt_path,
-            "config": cfg,
         }
 
-    # Select hyperparameter search based on mode
-    if mode == "quick":
-        param_dist = quick_search_mode()
-        N_TRIALS = 1
-        print("Quick mode: 1 trial, 3 epochs (for testing)")
-    elif mode == "fast":
-        param_dist = {
-            "emb_dim": [100, 200],  # Reduced from 3 to 2 options
-            "channels": [128, 192],  # Reduced from 3 to 2 options
-            "kernel_sizes": [(3, 4, 5)],  # Fixed to best performing option
-            "dropout": [0.3, 0.5],  # Keep 2 options
-            "lr": [1e-3, 2e-3],  # Reduced from 4 to 2 options
-            "weight_decay": [0.0, 1e-4],  # Reduced from 3 to 2 options
-            "batch_size": [128],  # Fixed to larger batch for speed
-            "max_len": [200],  # Fixed to reasonable length
-            "epochs": [6],  # Reduced from 12 to 6 epochs
-            "patience": [2],  # Reduced patience for faster stopping
-            "grad_clip": [1.0],  # Fixed to best practice
-            "optimizer": ["adamw"],  # Fixed to best performing
-        }
-        N_TRIALS = 8
-        print("Fast mode: 8 trials, 6 epochs (recommended)")
-    else:  # full mode
-        param_dist = {
-            "emb_dim": [100, 200, 300],
-            "channels": [128, 192, 256],
-            "kernel_sizes": [(3, 4, 5), (2, 3, 4, 5)],
-            "dropout": [0.3, 0.5],
-            "lr": [5e-4, 1e-3, 2e-3, 3e-3],
-            "weight_decay": [0.0, 1e-4, 5e-4],
-            "batch_size": [64, 128],
-            "max_len": [160, 200, 256],
-            "epochs": [12],
-            "patience": [3],
-            "grad_clip": [0.0, 1.0],
-            "optimizer": ["adamw", "adam"],
-        }
-        N_TRIALS = 16
-        print("Full mode: 16 trials, 12 epochs (thorough search)")
-    samples = list(ParameterSampler(param_dist, n_iter=N_TRIALS, random_state=42))
+    # Create Optuna study
+    print("\n" + "=" * 80)
+    print("Starting Optuna hyperparameter optimization...")
 
-    results = []
-    best = {"val_acc": -1.0}
-
-    for i, cfg in enumerate(samples):
-        print("\n" + "=" * 80)
-        print(f"Trial {i+1}/{N_TRIALS} | config: {cfg}")
-        out = train_eval_textcnn(
-            cfg, train_df_, val_df_, trial_idx=i, seed=42, fast_mode=True
-        )
-        results.append(out)
-        if out["status"] == "ok" and out["val_acc"] > best["val_acc"]:
-            best = out
-            # Save best model to standardized location
-            os.makedirs("outputs/textcnn/models", exist_ok=True)
-            torch.save(
-                torch.load(best["ckpt"], map_location="cpu"),
-                "outputs/textcnn/models/best_model.pt",
-            )
-
-    # Summarize results
-    df_results = pd.DataFrame(
-        [
-            {
-                "trial": r["trial"],
-                "status": r["status"],
-                "val_acc": r["val_acc"],
-                "best_epoch": r["best_epoch"],
-                **{f"cfg_{k}": v for k, v in r["config"].items()},
-            }
-            for r in results
-        ]
+    # Initialize main wandb run for study tracking
+    wandb.init(
+        project="ag-news-textcnn-optuna",
+        name="optuna_study",
+        tags=["textcnn", "ag-news", "optuna", "study"],
     )
 
-    df_results = df_results.sort_values("val_acc", ascending=False)
-    # Create output directories
-    os.makedirs("outputs/textcnn/plots", exist_ok=True)
-    os.makedirs("outputs/textcnn/models", exist_ok=True)
+    # Create study with pruning
+    study = optuna.create_study(
+        direction="maximize",
+        pruner=optuna.pruners.MedianPruner(
+            n_startup_trials=5, n_warmup_steps=3, interval_steps=1
+        ),
+        study_name="textcnn_optimization",
+    )
 
-    print("\n" + "=" * 80)
-    print("RESULTS SUMMARY:")
-    print(df_results.head(10))
+    # Add wandb callback for study tracking
+    wandb_callback = WeightsAndBiasesCallback(
+        metric_name="val_acc", wandb_kwargs={"project": "ag-news-textcnn-optuna"}
+    )
 
-    if best["val_acc"] > 0:
-        print(f"\nTraining completed successfully!")
-        print(f"Best trial: {best['trial']}")
-        print(f"Best validation accuracy: {best['val_acc']:.4f}")
-        print(f"Best epoch: {best['best_epoch']}")
-        print(f"Best model saved as: outputs/textcnn/models/best_model.pt")
-        print(f"Results saved in: outputs/textcnn/")
+    # Optimize
+    study.optimize(objective, n_trials=n_trials, callbacks=[wandb_callback])
 
-        # Evaluate on test set with best model
-        print("\nEvaluating best model on test set...")
+    # Get best trial
+    best_trial = study.best_trial
+    print(f"\nOptimization completed!")
+    print(f"Best trial: {best_trial.number}")
+    print(f"Best validation accuracy: {best_trial.value:.4f}")
+    print(f"Best parameters: {best_trial.params}")
+
+    # Log study results to main wandb run
+    wandb.log(
+        {
+            "best_trial_number": best_trial.number,
+            "best_val_accuracy": best_trial.value,
+            "n_trials": len(study.trials),
+            "n_completed_trials": len(
+                [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+            ),
+            "n_pruned_trials": len(
+                [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
+            ),
+        }
+    )
+
+    # Train final model with best parameters
+    print("\nTraining final model with best parameters...")
+    best_config = best_trial.params.copy()
+    best_config.update({"epochs": 15, "patience": 5})  # More epochs for final model
+
+    # Initialize wandb for final training
+    wandb.finish()  # Finish study run
+    wandb.init(
+        project="ag-news-textcnn-optuna",
+        name="final_model",
+        config=best_config,
+        tags=["textcnn", "ag-news", "optuna", "final"],
+    )
+
+    final_result = train_textcnn_single(best_config, train_df_, val_df_)
+
+    if final_result["status"] == "ok":
+        # Create output directories
+        os.makedirs("outputs/textcnn/models", exist_ok=True)
+
+        # Save best model to standardized location
+        torch.save(
+            torch.load(final_result["ckpt"], map_location="cpu"),
+            "outputs/textcnn/models/best_model.pt",
+        )
+
+        # Evaluate on test set
+        print("\nEvaluating final model on test set...")
         best_model = TextCNN(
             vocab_size=vocab_size,
-            emb_dim=best["config"]["emb_dim"],
+            emb_dim=best_config["emb_dim"],
             num_classes=4,
-            kernel_sizes=best["config"]["kernel_sizes"],
-            num_channels=best["config"]["channels"],
-            dropout=best["config"]["dropout"],
+            kernel_sizes=best_config["kernel_sizes"],
+            num_channels=best_config["channels"],
+            dropout=best_config["dropout"],
             pad_idx=0,
         ).to(device)
 
@@ -501,10 +695,10 @@ def main(mode="fast"):
         )
 
         # Create test dataset and dataloader
-        ds_test = AGNewsDataset(test_df, stoi, max_len=best["config"]["max_len"])
+        ds_test = AGNewsDataset(test_df, stoi, max_len=best_config["max_len"])
         dl_test = DataLoader(
             ds_test,
-            batch_size=best["config"]["batch_size"],
+            batch_size=best_config["batch_size"],
             shuffle=False,
             num_workers=num_workers,
             pin_memory=device != "cpu",
@@ -512,19 +706,50 @@ def main(mode="fast"):
 
         # Evaluate on test set
         crit = nn.CrossEntropyLoss()
-        test_loss, test_acc = run_epoch(dl_test, best_model, crit, device=device)
+        test_loss, test_acc = run_epoch(
+            dl_test, best_model, crit, device=device, epoch="Test", verbose=True
+        )
 
-        print(f"Test accuracy: {test_acc:.4f}")
-        print(f"Test loss: {test_loss:.4f}")
+        print(f"Final test accuracy: {test_acc:.4f}")
+        print(f"Final test loss: {test_loss:.4f}")
+
+        # Log final test results
+        wandb.log(
+            {
+                "final_test_accuracy": test_acc,
+                "final_test_loss": test_loss,
+                "final_val_accuracy": final_result["val_acc"],
+            }
+        )
+
+        # Save Optuna study
+        study_path = "outputs/textcnn/optuna_study.db"
+        os.makedirs(os.path.dirname(study_path), exist_ok=True)
+        study.trials_dataframe().to_csv(
+            "outputs/textcnn/optuna_trials.csv", index=False
+        )
+        print(f"Optuna trials saved to: outputs/textcnn/optuna_trials.csv")
+
     else:
-        print("\nNo successful trials found. All trials encountered errors.")
-        print("This suggests a fundamental issue with the model or data setup.")
+        print("\nFinal training failed with error:")
+        print(final_result["msg"])
+        wandb.log({"final_training_status": "failed"})
+
+    # Finish final wandb run
+    wandb.finish()
 
 
 def evaluate_saved_model():
     print("Starting TextCNN model evaluation on test set...")
 
     set_seed(42)
+
+    # Initialize wandb for evaluation
+    wandb.init(
+        project="ag-news-textcnn",
+        name="model_evaluation",
+        tags=["textcnn", "ag-news", "evaluation"],
+    )
 
     data_path = "data/"
     class_names = ["World", "Sports", "Business", "Sci/Tech"]
@@ -568,7 +793,7 @@ def evaluate_saved_model():
 
     test_df_copy = test_df.copy()
     test_df_copy["label"] = test_df_copy["Class Index"]
-    
+
     test_labels = test_df["Class Index"].values - 1  # Convert to 0-indexed
     ds_test = AGNewsDataset(test_df_copy, stoi, max_len=config["max_len"])
     dl_test = DataLoader(ds_test, batch_size=128, shuffle=False)
@@ -638,25 +863,48 @@ def evaluate_saved_model():
     print(f"Test ROC AUC: {test_roc_auc:.4f}")
     print(f"Plots saved in: outputs/textcnn/plots/")
 
+    # Log evaluation results to wandb
+    wandb.log(
+        {
+            "eval_test_accuracy": accuracy,
+            "eval_test_roc_auc": test_roc_auc,
+        }
+    )
+
+    # Log confusion matrix and ROC curves as images
+    if os.path.exists("outputs/textcnn/plots/confusion_matrix_test.png"):
+        wandb.log(
+            {
+                "confusion_matrix": wandb.Image(
+                    "outputs/textcnn/plots/confusion_matrix_test.png"
+                )
+            }
+        )
+    if os.path.exists("outputs/textcnn/plots/roc_curves_test.png"):
+        wandb.log(
+            {"roc_curves": wandb.Image("outputs/textcnn/plots/roc_curves_test.png")}
+        )
+
+    wandb.finish()
+
     return accuracy, test_roc_auc
 
 
 if __name__ == "__main__":
     import sys
 
-    mode = "fast"
-    if len(sys.argv) > 1:
-        mode = sys.argv[1].lower()
-        if mode not in ["quick", "fast", "full", "evaluate"]:
-            print("Invalid mode. Use: quick, fast, full, or evaluate")
-            print("Usage: python text_cnn.py [quick|fast|full|evaluate]")
-            print("   quick:    1 trial, 3 epochs (~2 minutes)")
-            print("   fast:     8 trials, 6 epochs (~15 minutes) [default]")
-            print("   full:     16 trials, 12 epochs (~60+ minutes)")
-            print("   evaluate: Load saved model and evaluate on test set")
-            sys.exit(1)
-
-    if mode == "evaluate":
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "evaluate":
         evaluate_saved_model()
     else:
-        main(mode)
+        # Parse number of trials from command line
+        n_trials = 20  # default
+        if len(sys.argv) > 1:
+            try:
+                n_trials = int(sys.argv[1])
+            except ValueError:
+                print(
+                    f"Invalid number of trials: {sys.argv[1]}. Using default: {n_trials}"
+                )
+
+        print(f"Running optimization with {n_trials} trials")
+        main(n_trials)

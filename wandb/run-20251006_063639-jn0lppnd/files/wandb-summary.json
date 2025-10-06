@@ -1,0 +1,1 @@
+{"_wandb":{"runtime":0},"_runtime":0,"weight_decay":1.9378094205564048e-05,"emb_dim":200,"max_len":200,"grad_clip":1.5,"optimizer":"adam","dropout":0.5,"kernel_sizes":[2,3,4,5],"val_acc":0.923125,"channels":256,"_timestamp":1.759725400597388e+09,"_step":0,"batch_size":256,"lr":0.001982169925018568}

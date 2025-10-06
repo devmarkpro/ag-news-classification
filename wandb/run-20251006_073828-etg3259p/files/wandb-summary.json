@@ -1,0 +1,1 @@
+{"weight_decay":3.06848428835753e-06,"optimizer":"adam","lr":0.0006280241392455559,"_step":0,"kernel_sizes":[3,4,5],"dropout":0.4,"channels":128,"grad_clip":2,"_timestamp":1.759729108913064e+09,"max_len":200,"_runtime":0,"val_acc":0.8754583333333333,"_wandb":{"runtime":0},"emb_dim":200,"batch_size":128}
