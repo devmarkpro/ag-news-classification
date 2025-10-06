@@ -110,9 +110,6 @@ python text_cnn.py
 
 # Custom number of trials
 python text_cnn.py 10
-
-# Evaluate saved best model
-python text_cnn.py evaluate
 ```
 
 **Optuna Features:**
